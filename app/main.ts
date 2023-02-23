@@ -1,4 +1,4 @@
-import {app, BrowserWindow, screen} from 'electron';
+import {app, BrowserWindow, ipcMain, screen} from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -9,6 +9,7 @@ const args = process.argv.slice(1),
 function createWindow(): BrowserWindow {
 
   const size = screen.getPrimaryDisplay().workAreaSize;
+  app.commandLine.appendSwitch('server-path', 'https://meta-ml-server.metatest.de:8181');
 
   // Create the browser window.
   win = new BrowserWindow({
@@ -19,7 +20,7 @@ function createWindow(): BrowserWindow {
     webPreferences: {
       nodeIntegration: true,
       allowRunningInsecureContent: (serve),
-      contextIsolation: false,  // false if you want to run e2e test with Spectron
+      contextIsolation: false,  // false if you want to run e2e test with Spectron,
     },
   });
 
@@ -81,3 +82,15 @@ try {
   // Catch Error
   // throw e;
 }
+
+
+ipcMain.on("loadURL", (event, url) => {
+  win.loadURL(url);
+});
+
+ipcMain.handle('server-flag', async (event, args) => {
+  let switchValue = app.commandLine.getSwitchValue('server-path');
+  console.log(switchValue);
+  return switchValue;
+});
+

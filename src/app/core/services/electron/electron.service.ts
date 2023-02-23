@@ -1,21 +1,28 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 
 // If you import a module but never use any of the imported values other than as TypeScript types,
 // the resulting javascript file will look as if you never imported the module at all.
-import { ipcRenderer, webFrame } from 'electron';
+import {ipcRenderer, webFrame} from 'electron';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
+import {Configuration} from "../configuration/entity/configuration";
+import {HttpClient} from "@angular/common/http";
+import {Observable} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
 })
-export class ElectronService {
+export class ElectronService{
   ipcRenderer: typeof ipcRenderer;
   webFrame: typeof webFrame;
   childProcess: typeof childProcess;
   fs: typeof fs;
+  private _serverPath: string;
 
-  constructor() {
+  SETTINGS_API_PATH = '/admin/rest/settings/';
+  ICON_PATH = '/admin/rest/appServConf/icon';
+
+  constructor(private http: HttpClient) {
     // Conditional imports
     if (this.isElectron) {
       this.ipcRenderer = window.require('electron').ipcRenderer;
@@ -35,22 +42,55 @@ export class ElectronService {
         }
         console.log(`stdout:\n${stdout}`);
       });
-
-      // Notes :
-      // * A NodeJS's dependency imported with 'window.require' MUST BE present in `dependencies` of both `app/package.json`
-      // and `package.json (root folder)` in order to make it work here in Electron's Renderer process (src folder)
-      // because it will loaded at runtime by Electron.
-      // * A NodeJS's dependency imported with TS module import (ex: import { Dropbox } from 'dropbox') CAN only be present
-      // in `dependencies` of `package.json (root folder)` because it is loaded during build phase and does not need to be
-      // in the final bundle. Reminder : only if not used in Electron's Main process (app folder)
-
-      // If you want to use a NodeJS 3rd party deps in Renderer process,
-      // ipcRenderer.invoke can serve many common use cases.
-      // https://www.electronjs.org/docs/latest/api/ipc-renderer#ipcrendererinvokechannel-args
     }
   }
 
   get isElectron(): boolean {
     return !!(window && window.process && window.process.type);
   }
+
+  get serverPath(): string {
+    return this._serverPath;
+  }
+
+  set serverPath(value: string) {
+    this._serverPath = value;
+  }
+
+  // public setApplicationIcon(base64: string): void {
+  //   if (base64 && base64 != '') {
+  //     const buffer = Buffer.from(base64, 'base64');
+  //     this.remote.getCurrentWindow().setIcon(this.img.createFromBuffer(buffer))
+  //   }
+  // }
+
+  public loadQuarter(quarter: string): void {
+    this.findServerUrlFlag().then(url => {
+      this.loadUrl(url + '/cs-client/' + quarter);
+    });
+  }
+
+  public loadUrl(url: string): void {
+    this.ipcRenderer.send('loadURL', url);
+  }
+
+  async findServerUrlFlag(): Promise<string> {
+    return await this.ipcRenderer.invoke('server-flag');
+  }
+
+  async getServerUrl() {
+    this.serverPath = await this.findServerUrlFlag();
+  }
+
+  loadFullURL() {
+    this.getServerUrl().then(() => {
+      return this.http.get<Configuration>(this.serverPath + this.SETTINGS_API_PATH + 'client_start_mit_abrechnungsquartal')
+        .subscribe((conf) => {
+          this.loadQuarter(conf.wert);
+        });
+    });
+
+  }
+
+
 }
