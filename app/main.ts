@@ -1,4 +1,4 @@
-import {app, BrowserWindow, ipcMain, screen} from 'electron';
+import {app, BrowserWindow, ipcMain, screen, session} from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -10,6 +10,8 @@ function createWindow(): BrowserWindow {
 
   const size = screen.getPrimaryDisplay().workAreaSize;
   app.commandLine.appendSwitch('server-path', 'https://meta-ml-server.metatest.de:8181');
+  app.commandLine.appendSwitch('ignore-certificate-errors', 'true');
+  session.defaultSession.allowNTLMCredentialsForDomains('*.metatest.de')
 
   // Create the browser window.
   win = new BrowserWindow({
@@ -23,6 +25,9 @@ function createWindow(): BrowserWindow {
       contextIsolation: false,  // false if you want to run e2e test with Spectron,
     },
   });
+
+  win.webContents.openDevTools();
+
 
   if (serve) {
     const debug = require('electron-debug');
@@ -51,6 +56,11 @@ function createWindow(): BrowserWindow {
     win = null;
   });
 
+  win.webContents.on('dom-ready', () => {
+    console.log('DOM is ready')
+  })
+
+
   return win;
 }
 
@@ -59,7 +69,11 @@ try {
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
   // Added 400 ms to fix the black background issue while using transparent window. More detais at https://github.com/electron/electron/issues/15947
-  app.on('ready', () => setTimeout(createWindow, 400));
+  app.on('ready', () => setTimeout(() =>
+  {
+    createWindow();
+  }, 400)
+  );
 
   // Quit when all windows are closed.
   app.on('window-all-closed', () => {
@@ -82,15 +96,22 @@ try {
   // Catch Error
   // throw e;
 }
-
+// console.log(win.webContents);
+const serverPath = app.commandLine.getSwitchValue('server-path');
 
 ipcMain.on("loadURL", (event, url) => {
-  win.loadURL(url);
+  win.loadURL(url).then(() =>
+  {
+    console.log("success for " + url);
+  }).catch(() => {
+    console.log("error for " + url);
+    // win.webContents.send("error", serverPath);
+  })
 });
 
 ipcMain.handle('server-flag', async (event, args) => {
-  let switchValue = app.commandLine.getSwitchValue('server-path');
-  console.log(switchValue);
-  return switchValue;
+  return app.commandLine.getSwitchValue('server-path');
 });
+
+
 

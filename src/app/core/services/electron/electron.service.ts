@@ -5,9 +5,9 @@ import {Injectable} from '@angular/core';
 import {ipcRenderer, webFrame} from 'electron';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
-import {Configuration} from "../configuration/entity/configuration";
-import {HttpClient} from "@angular/common/http";
-import {Observable} from "rxjs";
+import {Configuration} from '../configuration/entity/configuration';
+import {HttpClient} from '@angular/common/http';
+import {Observable} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -41,6 +41,10 @@ export class ElectronService{
           return;
         }
         console.log(`stdout:\n${stdout}`);
+      });
+      this.ipcRenderer.on('error', (event, url) => {
+        // window.location.replace('http://localhost:4200/**');
+        // alert('Error loading ' + url);
       });
     }
   }
@@ -83,13 +87,10 @@ export class ElectronService{
   }
 
   loadFullURL() {
-    this.getServerUrl().then(() => {
-      return this.http.get<Configuration>(this.serverPath + this.SETTINGS_API_PATH + 'client_start_mit_abrechnungsquartal')
-        .subscribe((conf) => {
-          this.loadQuarter(conf.wert);
-        });
-    });
-
+    this.findServerUrlFlag().then(url => {
+        this.loadUrl(url + '/cs-client/');
+      }
+    );
   }
 
 
