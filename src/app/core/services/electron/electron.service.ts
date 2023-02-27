@@ -61,12 +61,9 @@ export class ElectronService{
     this._serverPath = value;
   }
 
-  // public setApplicationIcon(base64: string): void {
-  //   if (base64 && base64 != '') {
-  //     const buffer = Buffer.from(base64, 'base64');
-  //     this.remote.getCurrentWindow().setIcon(this.img.createFromBuffer(buffer))
-  //   }
-  // }
+  public setApplicationIcon(base64: string): void {
+    this.ipcRenderer.send('icon', base64);
+  }
 
   public loadQuarter(quarter: string): void {
     this.findServerUrlFlag().then(url => {
@@ -86,11 +83,8 @@ export class ElectronService{
     this.serverPath = await this.findServerUrlFlag();
   }
 
-  loadFullURL() {
-    this.findServerUrlFlag().then(url => {
-        this.loadUrl(url + '/cs-client/');
-      }
-    );
+  loadFullURL(serverPath: string, quarter: string) {
+    this.loadUrl(serverPath + '/cs-client/' + quarter);
   }
 
 

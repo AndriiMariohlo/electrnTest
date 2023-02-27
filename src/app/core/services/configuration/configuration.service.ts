@@ -19,8 +19,8 @@ export class ConfigurationService {
   /**
    * Gets application start quarter
    */
-  async getStartQuarter(): Promise<Configuration> {
-    return await this.http.get<Configuration>(this.electronService.serverPath + this.SETTINGS_API_PATH + 'client_start_mit_abrechnungsquartal').toPromise();
+  async getStartQuarter(serverPath: string): Promise<Configuration> {
+    return await this.http.get<Configuration>(serverPath + this.SETTINGS_API_PATH + 'client_start_mit_abrechnungsquartal').toPromise();
   }
 
   /**

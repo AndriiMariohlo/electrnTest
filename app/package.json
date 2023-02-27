@@ -9,5 +9,6 @@
   "main": "main.js",
   "private": true,
   "dependencies": {
+    "image-js": "^0.35.3"
   }
 }

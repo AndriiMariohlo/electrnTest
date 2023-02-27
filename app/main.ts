@@ -1,4 +1,4 @@
-import {app, BrowserWindow, ipcMain, screen, session} from 'electron';
+import {app, BrowserWindow, ipcMain, screen, session, Menu, nativeImage} from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -19,6 +19,7 @@ function createWindow(): BrowserWindow {
     y: 0,
     width: size.width,
     height: size.height,
+    icon: "./src/assets/icons/CS_logo.png",
     webPreferences: {
       nodeIntegration: true,
       allowRunningInsecureContent: (serve),
@@ -56,10 +57,34 @@ function createWindow(): BrowserWindow {
     win = null;
   });
 
-  win.webContents.on('dom-ready', () => {
-    console.log('DOM is ready')
-  })
+  const menu = Menu.buildFromTemplate([
+    {
+      label: 'Server',
+      submenu: [
+        {
+          label: 'Go to localhost:4200',
+          click: function() {
+            win.loadURL('http://localhost:4200');
+          },
+        },
+        {
+          label: 'Load home page',
+          click: function() {
+            win.loadURL(new URL(path.join('file:', __dirname, '../dist/index.html')).href);
+          },
+        },
+        {
+          label: 'Quit',
+          click: function() {
+            app.quit();
+          },
+          accelerator: 'CmdOrCtrl+Q',
+        },
+      ],
+    },
+  ]);
 
+  Menu.setApplicationMenu(menu);
 
   return win;
 }
@@ -103,6 +128,7 @@ ipcMain.on("loadURL", (event, url) => {
   win.loadURL(url).then(() =>
   {
     console.log("success for " + url);
+    win.webContents.send("message");
   }).catch(() => {
     console.log("error for " + url);
     // win.webContents.send("error", serverPath);
@@ -111,6 +137,11 @@ ipcMain.on("loadURL", (event, url) => {
 
 ipcMain.handle('server-flag', async (event, args) => {
   return app.commandLine.getSwitchValue('server-path');
+});
+
+ipcMain.on("icon", (event, url, icon) => {
+    let nativeImage1 = nativeImage.createFromDataURL(icon);
+    win.setIcon(nativeImage1);
 });
 
 
