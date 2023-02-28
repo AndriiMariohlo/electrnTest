@@ -8,6 +8,8 @@ import * as fs from 'fs';
 import {Configuration} from '../configuration/entity/configuration';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
+import {ConfigurationService} from "../configuration/configuration.service";
+import {ImageProcessingService} from "../image-processing/image-processing.service";
 
 @Injectable({
   providedIn: 'root'
@@ -17,12 +19,10 @@ export class ElectronService{
   webFrame: typeof webFrame;
   childProcess: typeof childProcess;
   fs: typeof fs;
-  private _serverPath: string;
 
-  SETTINGS_API_PATH = '/admin/rest/settings/';
-  ICON_PATH = '/admin/rest/appServConf/icon';
-
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient,
+              private configurationService: ConfigurationService,
+              private imageProcessingService:ImageProcessingService) {
     // Conditional imports
     if (this.isElectron) {
       this.ipcRenderer = window.require('electron').ipcRenderer;
@@ -42,23 +42,25 @@ export class ElectronService{
         }
         console.log(`stdout:\n${stdout}`);
       });
+
       this.ipcRenderer.on('error', (event, url) => {
-        // window.location.replace('http://localhost:4200/**');
-        // alert('Error loading ' + url);
       });
+
+      // this.ipcRenderer.on('server-change', (event, serverPath) => {
+      //   console.log(serverPath);
+      //   this.configurationService.getBase64Icon(serverPath).then(image => {
+      //     const base64icon = 'data:image/jpeg;base64,'+ image;
+      //     this.imageProcessingService.getTaskBarIconNoColor(base64icon).then(modifiedImage => {
+      //       this.setApplicationIcon(modifiedImage);
+      //       this.loadUrl(serverPath);
+      //     });
+      //   });
+      // });
     }
   }
 
   get isElectron(): boolean {
     return !!(window && window.process && window.process.type);
-  }
-
-  get serverPath(): string {
-    return this._serverPath;
-  }
-
-  set serverPath(value: string) {
-    this._serverPath = value;
   }
 
   public setApplicationIcon(base64: string): void {
@@ -77,10 +79,6 @@ export class ElectronService{
 
   async findServerUrlFlag(): Promise<string> {
     return await this.ipcRenderer.invoke('server-flag');
-  }
-
-  async getServerUrl() {
-    this.serverPath = await this.findServerUrlFlag();
   }
 
   loadFullURL(serverPath: string, quarter: string) {

@@ -26,8 +26,8 @@ export class ConfigurationService {
   /**
    * Gets application icon
    */
-  async getBase64Icon(): Promise<string> {
-    return await this.http.get(this.electronService.serverPath + this.ICON_PATH, {responseType: 'text'}).toPromise();
+  async getBase64Icon(serverPath: string): Promise<string> {
+    return await this.http.get(serverPath + this.ICON_PATH, {responseType: 'text'}).toPromise();
   }
 
 }
